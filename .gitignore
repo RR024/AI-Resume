@@ -20,6 +20,7 @@ ENV/
 .env
 .env.*
 !.env.example
+!frontend/.env.local
 
 # IDE
 .vscode/
@@ -37,3 +38,10 @@ Thumbs.db
 # Distribution / packaging
 *.tar.gz
 *.zip
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+frontend/.next/
+frontend/node_modules/

@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ───────────────────────────────────────────────────────────────── */
+:root {
+  --bg-base:  #0b0f1a;
+  --bg-card:  #0e1220;
+  --accent:   #0066ff;
+  --cyan:     #00e0ff;
+  --green:    #0bd97a;
+  --txt:      #e6eef8;
+  --muted:    #87a6c9;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--bg-base);
+  color: var(--txt);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Custom scrollbar ───────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0b0f1a; }
+::-webkit-scrollbar-thumb { background: #1e2d4a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2a4169; }
+
+/* ── Selection ──────────────────────────────────────────────────────────── */
+::selection { background: rgba(0, 102, 255, 0.3); color: #e6eef8; }
+
+/* ── Reusable utility classes ───────────────────────────────────────────── */
+@layer components {
+  .card {
+    @apply rounded-xl border border-white/5 bg-gradient-card shadow-card;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3
+           font-semibold text-white transition-all duration-200
+           bg-gradient-to-r from-[#0066ff] to-[#0044cc]
+           hover:from-[#0052d6] hover:to-[#0033b3]
+           focus:outline-none focus:ring-2 focus:ring-[#0066ff]/50
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5
+           font-medium text-txt-muted border border-white/10
+           hover:border-white/20 hover:text-txt-primary
+           transition-all duration-200
+           disabled:opacity-50;
+  }
+
+  .pill-score {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-sm font-bold
+           text-[#001022] bg-gradient-score;
+  }
+
+  .pill-salary {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-sm font-bold
+           text-[#001022] bg-gradient-salary;
+  }
+
+  .section-title {
+    @apply text-xs font-semibold uppercase tracking-widest text-txt-muted mb-2;
+  }
+
+  .skill-chip {
+    @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-medium
+           border;
+  }
+}
