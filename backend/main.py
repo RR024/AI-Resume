@@ -37,6 +37,7 @@ from backend.ml.logic import (
 from backend.ml.model import MLModel, model as _global_model
 from backend.schemas import (
     HealthResponse,
+    LOW_CONFIDENCE_THRESHOLD,
     RecommendRequest,
     RecommendResponse,
     RoleRecommendation,
@@ -208,8 +209,12 @@ def recommend_careers(
             headline = "Solid fit — fill a few gaps to level up!"
         elif score_pct >= 40:
             headline = "Good start — focus on core platform skills!"
-        else:
+        elif score_pct >= LOW_CONFIDENCE_THRESHOLD:
             headline = "Great beginner path — follow this 4-week plan!"
+        else:
+            headline = "Closest available match — your skill set may need a niche role not yet in our dataset."
+
+        is_low_confidence = score_pct < LOW_CONFIDENCE_THRESHOLD
 
         recommendations.append(
             RoleRecommendation(
@@ -222,13 +227,25 @@ def recommend_careers(
                 action_plan=action_plan,
                 mini_projects=mini_projects,
                 headline=headline,
+                low_confidence=is_low_confidence,
             )
         )
+
+    # Determine whether ALL results are low-confidence
+    all_low = all(r.low_confidence for r in recommendations)
+    suggestion = (
+        "None of the roles in our dataset closely match your skills. "
+        "Try adding more recognised skill keywords (e.g. 'python', 'react', 'aws'), "
+        "or your role may not yet be in our dataset — more roles are added regularly."
+        if all_low else None
+    )
 
     return RecommendResponse(
         recommendations=recommendations,
         total_results=len(recommendations),
         input_skills=request.skills,
+        no_strong_match=all_low,
+        suggestion=suggestion,
     )
 
 

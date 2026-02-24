@@ -48,6 +48,18 @@ _BASE_ROWS: list[tuple[str, str, int]] = [
     ("HR Analytics",                  "excel, sql, python, analytics, communication, dashboards",                                                                          800_000),
     ("Cloud Architect",               "architectural design, aws, azure, gcp, security, cost optimization",                                                               2_000_000),
     ("Robotics Engineer",             "c++, robotics, control systems, sensors, python, ros",                                                                             1_300_000),
+    # ── Additional niche / high-demand roles ────────────────────────────────
+    ("Game Developer",                "unity, unreal engine, c++, c#, game physics, 3d modeling, opengl, gameplay programming",                                           1_100_000),
+    ("Blockchain Developer",          "solidity, ethereum, smart contracts, web3, truffle, hardhat, javascript, cryptography",                                             1_600_000),
+    ("AR/VR Developer",               "unity, unreal engine, ar, vr, xr, c#, spatial computing, 3d design, openxr",                                                      1_400_000),
+    ("Embedded Systems Engineer",     "c, c++, rtos, microcontrollers, firmware, hardware, iot, serial protocols, embedded linux",                                        1_200_000),
+    ("Data Science Manager",          "python, machine learning, leadership, team management, stakeholder communication, strategy, data strategy",                         2_200_000),
+    ("Technical Program Manager",     "project management, agile, scrum, communication, risk management, roadmap, stakeholder management, jira",                          1_800_000),
+    ("Security Engineer",             "penetration testing, security, vulnerability assessment, siem, python, linux, cloud security, compliance",                         1_600_000),
+    ("UI/UX Designer",                "figma, sketch, user research, wireframing, prototyping, usability testing, design systems, css",                                   900_000),
+    ("Flutter Developer",             "flutter, dart, mobile development, android, ios, rest api, firebase, ui design",                                                   1_000_000),
+    ("Django Developer",              "python, django, rest api, postgresql, orm, html, css, docker",                                                                     900_000),
+    ("MLOps Engineer",                "mlops, python, docker, kubernetes, mlflow, kubeflow, ci/cd, model deployment, monitoring",                                         1_500_000),
 ]
 
 

@@ -175,6 +175,29 @@ function ResultsContent() {
               ))}
             </motion.div>
 
+        {/* ── No strong match banner ── */}
+            {data.no_strong_match && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6 flex items-start gap-3 rounded-xl border
+                           border-amber-500/25 bg-amber-500/8 px-5 py-4"
+              >
+                <div className="flex-shrink-0 mt-0.5 h-8 w-8 rounded-full
+                                bg-amber-500/15 flex items-center justify-center">
+                  <Layers size={16} className="text-amber-400" />
+                </div>
+                <div>
+                  <p className="font-semibold text-amber-400 text-sm mb-1">
+                    No strong match found in our dataset
+                  </p>
+                  <p className="text-amber-300/70 text-sm leading-relaxed">
+                    {data.suggestion}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
             {/* Role cards */}
             <div className="space-y-4">
               {data.recommendations.map((rec, i) => (

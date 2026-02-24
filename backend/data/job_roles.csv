@@ -24,6 +24,17 @@ Sales Engineer,"communication, product knowledge, sales, demos, crm, negotiation
 HR Analytics,"excel, sql, python, analytics, communication, dashboards",800000
 Cloud Architect,"architectural design, aws, azure, gcp, security, cost optimization",2000000
 Robotics Engineer,"c++, robotics, control systems, sensors, python, ros",1300000
+Game Developer,"unity, unreal engine, c++, c#, game physics, 3d modeling, opengl, gameplay programming",1100000
+Blockchain Developer,"solidity, ethereum, smart contracts, web3, truffle, hardhat, javascript, cryptography",1600000
+AR/VR Developer,"unity, unreal engine, ar, vr, xr, c#, spatial computing, 3d design, openxr",1400000
+Embedded Systems Engineer,"c, c++, rtos, microcontrollers, firmware, hardware, iot, serial protocols, embedded linux",1200000
+Data Science Manager,"python, machine learning, leadership, team management, stakeholder communication, strategy, data strategy",2200000
+Technical Program Manager,"project management, agile, scrum, communication, risk management, roadmap, stakeholder management, jira",1800000
+Security Engineer,"penetration testing, security, vulnerability assessment, siem, python, linux, cloud security, compliance",1600000
+UI/UX Designer,"figma, sketch, user research, wireframing, prototyping, usability testing, design systems, css",900000
+Flutter Developer,"flutter, dart, mobile development, android, ios, rest api, firebase, ui design",1000000
+Django Developer,"python, django, rest api, postgresql, orm, html, css, docker",900000
+MLOps Engineer,"mlops, python, docker, kubernetes, mlflow, kubeflow, ci/cd, model deployment, monitoring",1500000
 Junior Data Scientist,"python, machine learning, statistics, pandas, numpy, sklearn, data visualization, SQL, deep learning, communication, basics, eagerness to learn",660000
 Senior Data Scientist,"python, machine learning, statistics, pandas, numpy, sklearn, data visualization, SQL, deep learning, communication, leadership, architecture, mentoring",1920000
 Junior Machine Learning Engineer,"python, tensorflow, pytorch, machine learning, algorithms, system design, docker, kubernetes, mlops, basics, eagerness to learn",770000
@@ -74,3 +85,25 @@ Junior Cloud Architect,"architectural design, aws, azure, gcp, security, cost op
 Senior Cloud Architect,"architectural design, aws, azure, gcp, security, cost optimization, leadership, architecture, mentoring",3200000
 Junior Robotics Engineer,"c++, robotics, control systems, sensors, python, ros, basics, eagerness to learn",715000
 Senior Robotics Engineer,"c++, robotics, control systems, sensors, python, ros, leadership, architecture, mentoring",2080000
+Junior Game Developer,"unity, unreal engine, c++, c#, game physics, 3d modeling, opengl, gameplay programming, basics, eagerness to learn",605000
+Senior Game Developer,"unity, unreal engine, c++, c#, game physics, 3d modeling, opengl, gameplay programming, leadership, architecture, mentoring",1760000
+Junior Blockchain Developer,"solidity, ethereum, smart contracts, web3, truffle, hardhat, javascript, cryptography, basics, eagerness to learn",880000
+Senior Blockchain Developer,"solidity, ethereum, smart contracts, web3, truffle, hardhat, javascript, cryptography, leadership, architecture, mentoring",2560000
+Junior AR/VR Developer,"unity, unreal engine, ar, vr, xr, c#, spatial computing, 3d design, openxr, basics, eagerness to learn",770000
+Senior AR/VR Developer,"unity, unreal engine, ar, vr, xr, c#, spatial computing, 3d design, openxr, leadership, architecture, mentoring",2240000
+Junior Embedded Systems Engineer,"c, c++, rtos, microcontrollers, firmware, hardware, iot, serial protocols, embedded linux, basics, eagerness to learn",660000
+Senior Embedded Systems Engineer,"c, c++, rtos, microcontrollers, firmware, hardware, iot, serial protocols, embedded linux, leadership, architecture, mentoring",1920000
+Junior Data Science Manager,"python, machine learning, leadership, team management, stakeholder communication, strategy, data strategy, basics, eagerness to learn",1210000
+Senior Data Science Manager,"python, machine learning, leadership, team management, stakeholder communication, strategy, data strategy, leadership, architecture, mentoring",3520000
+Junior Technical Program Manager,"project management, agile, scrum, communication, risk management, roadmap, stakeholder management, jira, basics, eagerness to learn",990000
+Senior Technical Program Manager,"project management, agile, scrum, communication, risk management, roadmap, stakeholder management, jira, leadership, architecture, mentoring",2880000
+Junior Security Engineer,"penetration testing, security, vulnerability assessment, siem, python, linux, cloud security, compliance, basics, eagerness to learn",880000
+Senior Security Engineer,"penetration testing, security, vulnerability assessment, siem, python, linux, cloud security, compliance, leadership, architecture, mentoring",2560000
+Junior UI/UX Designer,"figma, sketch, user research, wireframing, prototyping, usability testing, design systems, css, basics, eagerness to learn",495000
+Senior UI/UX Designer,"figma, sketch, user research, wireframing, prototyping, usability testing, design systems, css, leadership, architecture, mentoring",1440000
+Junior Flutter Developer,"flutter, dart, mobile development, android, ios, rest api, firebase, ui design, basics, eagerness to learn",550000
+Senior Flutter Developer,"flutter, dart, mobile development, android, ios, rest api, firebase, ui design, leadership, architecture, mentoring",1600000
+Junior Django Developer,"python, django, rest api, postgresql, orm, html, css, docker, basics, eagerness to learn",495000
+Senior Django Developer,"python, django, rest api, postgresql, orm, html, css, docker, leadership, architecture, mentoring",1440000
+Junior MLOps Engineer,"mlops, python, docker, kubernetes, mlflow, kubeflow, ci/cd, model deployment, monitoring, basics, eagerness to learn",825000
+Senior MLOps Engineer,"mlops, python, docker, kubernetes, mlflow, kubeflow, ci/cd, model deployment, monitoring, leadership, architecture, mentoring",2400000

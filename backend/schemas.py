@@ -45,6 +45,10 @@ class RecommendRequest(BaseModel):
 # Response ── nested building blocks
 # ---------------------------------------------------------------------------
 
+# Threshold below which a match is considered "low confidence"
+LOW_CONFIDENCE_THRESHOLD: float = 20.0  # percent
+
+
 class RoleRecommendation(BaseModel):
     """A single recommended career role with full details."""
 
@@ -57,6 +61,10 @@ class RoleRecommendation(BaseModel):
     action_plan: List[str] = Field(..., description="4-week personalised learning roadmap")
     mini_projects: List[str] = Field(..., description="Suggested hands-on projects for this role")
     headline: str = Field(..., description="Motivational headline based on match score")
+    low_confidence: bool = Field(
+        default=False,
+        description="True when match score is below the confidence threshold — results are approximate",
+    )
 
 
 class RecommendResponse(BaseModel):
@@ -65,6 +73,14 @@ class RecommendResponse(BaseModel):
     recommendations: List[RoleRecommendation]
     total_results: int = Field(..., description="Number of recommendations returned")
     input_skills: str = Field(..., description="Echo of the normalised input skills")
+    no_strong_match: bool = Field(
+        default=False,
+        description="True when ALL returned recommendations are low-confidence",
+    )
+    suggestion: Optional[str] = Field(
+        default=None,
+        description="Helpful hint shown to the user when no strong match is found",
+    )
 
 
 # ---------------------------------------------------------------------------

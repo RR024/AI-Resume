@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown, ChevronUp, BookOpen, Target,
-  Zap, CheckCircle2, AlertCircle, Lightbulb, Code2
+  Zap, CheckCircle2, AlertCircle, Lightbulb, Code2, AlertTriangle
 } from "lucide-react";
 import type { RoleRecommendation } from "@/lib/types";
 
@@ -38,6 +38,18 @@ export default function RoleCard({ rec, rank }: Props) {
     >
       {/* ── Card header (always visible) ───────────────────────────────── */}
       <div className="p-5">
+
+        {/* Low-confidence warning banner */}
+        {rec.low_confidence && (
+          <div className="flex items-start gap-2 rounded-lg bg-amber-500/8 border
+                          border-amber-500/20 px-3 py-2 mb-4 text-xs text-amber-400">
+            <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" />
+            <span>
+              <strong>Weak match</strong> — this role was the closest in our dataset
+              but your skills don&apos;t strongly align. Results may not be accurate.
+            </span>
+          </div>
+        )}
         <div className="flex items-start justify-between gap-3 flex-wrap">
 
           <div className="flex items-start gap-3 min-w-0">

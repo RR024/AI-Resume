@@ -11,12 +11,15 @@ export interface RoleRecommendation {
   action_plan: string[];
   mini_projects: string[];
   headline: string;
+  low_confidence: boolean;    // true when match_score < 20%
 }
 
 export interface RecommendResponse {
   recommendations: RoleRecommendation[];
   total_results: number;
   input_skills: string;
+  no_strong_match: boolean;   // true when ALL results are low-confidence
+  suggestion: string | null;  // helpful message when no_strong_match is true
 }
 
 export interface RecommendRequest {
