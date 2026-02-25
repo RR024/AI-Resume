@@ -46,7 +46,8 @@ class RecommendRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 # Threshold below which a match is considered "low confidence"
-LOW_CONFIDENCE_THRESHOLD: float = 20.0  # percent
+# (applied after sqrt calibration of the raw cosine score)
+LOW_CONFIDENCE_THRESHOLD: float = 45.0  # percent
 
 
 class RoleRecommendation(BaseModel):

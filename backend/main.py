@@ -20,6 +20,7 @@ Or via the convenience script at the repo root:
 from __future__ import annotations
 
 import logging
+import math
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, status
@@ -189,7 +190,14 @@ def recommend_careers(
     recommendations: list[RoleRecommendation] = []
 
     for _, row in top_df.iterrows():
-        score_pct = round(float(row["score"]) * 100, 1)
+        # ── Score calibration ──────────────────────────────────────────────
+        # Raw TF-IDF cosine similarity is compressed toward 0 on short keyword
+        # lists — a perfect match typically peaks at 0.5–0.65, never 1.0.
+        # Square-root calibration expands the mid-range to an intuitive scale
+        # while preserving relative ranking (monotonic transform).
+        raw_cosine = float(row["score"])          # 0.0 – 1.0
+        calibrated = math.sqrt(raw_cosine)        # sqrt stretches mid-range up
+        score_pct = round(min(calibrated * 100, 98.0), 1)
 
         role_skill_list = [
             s.strip()
@@ -203,14 +211,14 @@ def recommend_careers(
         mini_projects = get_mini_projects(str(row["role"]))
 
         # Motivational headline
-        if score_pct >= 80:
-            headline = "Excellent fit — polish & showcase!"
+        if score_pct >= 85:
+            headline = "Excellent fit — polish your portfolio & start applying!"
+        elif score_pct >= 75:
+            headline = "Solid fit — close a few skill gaps to level up!"
         elif score_pct >= 60:
-            headline = "Solid fit — fill a few gaps to level up!"
-        elif score_pct >= 40:
-            headline = "Good start — focus on core platform skills!"
+            headline = "Good match — follow the 4-week plan to get job-ready!"
         elif score_pct >= LOW_CONFIDENCE_THRESHOLD:
-            headline = "Great beginner path — follow this 4-week plan!"
+            headline = "Promising path — build the missing skills step by step!"
         else:
             headline = "Closest available match — your skill set may need a niche role not yet in our dataset."
 
