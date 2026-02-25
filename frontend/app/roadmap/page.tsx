@@ -20,6 +20,8 @@ import {
   Trophy,
   Calendar,
   TrendingUp,
+  Download,
+  Loader2,
 } from "lucide-react";
 import Header from "@/components/Header";
 import ScoreRing from "@/components/ScoreRing";
@@ -144,6 +146,301 @@ function ProjectCard({ project, index }: { project: string; index: number }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   PDF Export
+───────────────────────────────────────────────────────────── */
+async function exportRoadmapPDF(
+  rec: RoleRecommendation,
+  checkedSkills: Set<string>,
+  readiness: number,
+  gapProgress: number
+) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+  const W = 210; // A4 width mm
+  const MARGIN = 18;
+  const COL = W - MARGIN * 2;
+  let y = 0;
+
+  // ── Colour palette ──
+  const BG       = [8,   8,  20] as const;
+  const SURFACE  = [18,  20,  40] as const;
+  const PURPLE   = [124, 58, 237] as const;
+  const CYAN     = [6,  182, 212] as const;
+  const GREEN    = [16, 185, 129] as const;
+  const AMBER    = [245,158,  11] as const;
+  const PINK     = [236, 72, 153] as const;
+  const WHITE    = [255,255, 255] as const;
+  const MUTED    = [100,116, 139] as const;
+  const DARK_MUT = [30,  41,  59] as const;
+
+  function setFill(c: readonly [number,number,number]) { doc.setFillColor(c[0],c[1],c[2]); }
+  function setDraw(c: readonly [number,number,number]) { doc.setDrawColor(c[0],c[1],c[2]); }
+  function setTxt(c: readonly [number,number,number])  { doc.setTextColor(c[0],c[1],c[2]); }
+
+  // ── Full page background ──
+  function drawPageBg() {
+    setFill(BG); doc.rect(0, 0, W, 297, "F");
+  }
+  drawPageBg();
+
+  // ── Helpers ──
+  function newPageIfNeeded(needed: number) {
+    if (y + needed > 278) {
+      doc.addPage();
+      drawPageBg();
+      y = MARGIN;
+    }
+  }
+
+  function sectionHeader(label: string, color: readonly [number,number,number]) {
+    newPageIfNeeded(12);
+    setFill(color);
+    doc.setFillColor(color[0], color[1], color[2], 0.15);
+    doc.roundedRect(MARGIN, y, COL, 8, 2, 2, "F");
+    setFill(color); doc.setFillColor(color[0], color[1], color[2]);
+    doc.rect(MARGIN, y, 3, 8, "F");
+    setTxt(color);
+    doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
+    doc.text(label.toUpperCase(), MARGIN + 7, y + 5.5);
+    y += 12;
+  }
+
+  function pill(text: string, color: readonly [number,number,number], px: number, py: number): number {
+    doc.setFontSize(7); doc.setFont("helvetica", "bold");
+    const tw = doc.getTextWidth(text);
+    const pw = tw + 6; const ph = 5;
+    doc.setFillColor(color[0], color[1], color[2], 0.15);
+    doc.roundedRect(px, py - 3.5, pw, ph, 1.5, 1.5, "F");
+    setTxt(color); doc.text(text, px + 3, py);
+    return pw + 3;
+  }
+
+  function wrappedText(
+    text: string,
+    x: number,
+    startY: number,
+    maxW: number,
+    lineH: number,
+    color: readonly [number,number,number],
+    size: number,
+    style: "normal" | "bold" = "normal"
+  ): number {
+    setTxt(color); doc.setFontSize(size); doc.setFont("helvetica", style);
+    const lines = doc.splitTextToSize(text, maxW) as string[];
+    lines.forEach((line) => {
+      newPageIfNeeded(lineH);
+      doc.text(line, x, startY);
+      startY += lineH;
+    });
+    return startY;
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // HEADER BLOCK
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const headerH = 52;
+  // gradient-ish background via two overlapping rects
+  doc.setFillColor(30, 15, 60); doc.rect(0, 0, W, headerH, "F");
+  doc.setFillColor(6, 30, 60, 0.6); doc.rect(W / 2, 0, W / 2, headerH, "F");
+
+  // decorative left accent bar
+  const barGrad = [PURPLE, CYAN, GREEN] as const;
+  barGrad.forEach((c, i) => {
+    setFill(c); doc.rect(0, (headerH / 3) * i, 4, headerH / 3, "F");
+  });
+
+  // App name badge
+  doc.setFillColor(124, 58, 237, 0.20);
+  doc.roundedRect(MARGIN, 9, 38, 5.5, 1.5, 1.5, "F");
+  setTxt(PURPLE); doc.setFontSize(6); doc.setFont("helvetica", "bold");
+  doc.text("AI CAREER PATH RECOMMENDER", MARGIN + 2.5, 13);
+
+  // Role title
+  setTxt(WHITE); doc.setFontSize(18); doc.setFont("helvetica", "bold");
+  doc.text(rec.role, MARGIN, 26, { maxWidth: COL - 35 });
+
+  // Headline
+  setTxt(MUTED); doc.setFontSize(7.5); doc.setFont("helvetica", "normal");
+  const hlLines = doc.splitTextToSize(rec.headline, COL - 35) as string[];
+  hlLines.forEach((l, i) => doc.text(l, MARGIN, 32 + i * 4));
+
+  // Score circle (right side)
+  const cx = W - MARGIN - 14; const cy = 26;
+  // outer ring
+  setDraw(PURPLE); doc.setLineWidth(1.5);
+  doc.circle(cx, cy, 12, "S");
+  // filled arc approximation
+  const scoreAng = (rec.match_score / 100) * 360;
+  setTxt(WHITE); doc.setFontSize(9); doc.setFont("helvetica", "bold");
+  doc.text(`${rec.match_score}%`, cx, cy + 0.5, { align: "center" });
+  setTxt(MUTED); doc.setFontSize(5); doc.setFont("helvetica", "normal");
+  doc.text("match", cx, cy + 4.5, { align: "center" });
+
+  // Stat pills row
+  const salaryText = rec.avg_salary >= 100_000
+    ? `₹${(rec.avg_salary / 100_000).toFixed(1)}L/yr`
+    : `₹${rec.avg_salary.toLocaleString()}/yr`;
+
+  y = headerH - 11;
+  let px = MARGIN;
+  px += pill(salaryText, GREEN, px, y);
+  px += pill(`${rec.match_score}% match`, CYAN, px, y);
+  px += pill(`${rec.missing_skills.length} gaps`, AMBER, px, y);
+  pill(`${readiness}% ready`, GREEN, px, y);
+
+  y = headerH + 8;
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // READINESS BAR
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  newPageIfNeeded(16);
+  setTxt(MUTED); doc.setFontSize(6.5); doc.setFont("helvetica", "bold");
+  doc.text("OVERALL READINESS", MARGIN, y);
+  setTxt(GREEN); doc.text(`${readiness}%`, W - MARGIN, y, { align: "right" });
+  y += 3;
+  setFill(DARK_MUT); doc.roundedRect(MARGIN, y, COL, 3, 1, 1, "F");
+  const barColor = readiness >= 75 ? GREEN : readiness >= 50 ? CYAN : AMBER;
+  setFill(barColor); doc.roundedRect(MARGIN, y, COL * (readiness / 100), 3, 1, 1, "F");
+  y += 8;
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // STRENGTHS
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  if (rec.strengths.length > 0) {
+    sectionHeader("Your Strengths — Skills You Already Have", GREEN);
+    let px2 = MARGIN;
+    rec.strengths.forEach((s) => {
+      const tw = doc.getTextWidth(s) + 8;
+      if (px2 + tw > W - MARGIN) { px2 = MARGIN; y += 7; newPageIfNeeded(7); }
+      doc.setFillColor(16, 185, 129, 0.15);
+      doc.roundedRect(px2, y - 4, tw, 5.5, 1.5, 1.5, "F");
+      setTxt(GREEN); doc.setFontSize(7); doc.setFont("helvetica", "bold");
+      doc.text(`✓ ${s}`, px2 + 3, y);
+      px2 += tw + 2;
+    });
+    y += 9;
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // SKILL GAP TRACKER
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  if (rec.missing_skills.length > 0) {
+    sectionHeader(`Skill Gap Tracker  (${checkedSkills.size}/${rec.missing_skills.length} completed)`, AMBER);
+    // progress bar
+    setFill(DARK_MUT); doc.roundedRect(MARGIN, y, COL, 2.5, 1, 1, "F");
+    const gpColor = gapProgress === 100 ? GREEN : AMBER;
+    setFill(gpColor); doc.roundedRect(MARGIN, y, COL * (gapProgress / 100), 2.5, 1, 1, "F");
+    y += 6;
+    rec.missing_skills.forEach((skill) => {
+      newPageIfNeeded(7);
+      const done = checkedSkills.has(skill);
+      const rowColor = done ? GREEN : MUTED;
+      // row bg
+      doc.setFillColor(done ? 16 : 255, done ? 185 : 255, done ? 129 : 255, done ? 0.07 : 0.03);
+      doc.roundedRect(MARGIN, y - 3.5, COL, 6, 1.5, 1.5, "F");
+      // check icon
+      setTxt(rowColor); doc.setFontSize(7.5);
+      doc.text(done ? "✓" : "○", MARGIN + 3, y);
+      // skill name
+      doc.setFont("helvetica", done ? "bold" : "normal");
+      doc.setFontSize(7.5);
+      setTxt(done ? GREEN : [148, 163, 184] as const);
+      doc.text(skill, MARGIN + 10, y);
+      // badge
+      const badge = done ? "Done" : "To learn";
+      const bw = doc.getTextWidth(badge) + 6;
+      doc.setFillColor(done ? 16 : 100, done ? 185 : 116, done ? 129 : 139, done ? 0.15 : 0.15);
+      doc.roundedRect(W - MARGIN - bw, y - 3.5, bw, 5, 1.5, 1.5, "F");
+      setTxt(done ? GREEN : MUTED); doc.setFontSize(6.5); doc.setFont("helvetica", "bold");
+      doc.text(badge, W - MARGIN - bw + 3, y - 0.2);
+      y += 7;
+    });
+    y += 3;
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // LEARNING RESOURCES
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  if (rec.resources.length > 0) {
+    sectionHeader("Curated Learning Resources", CYAN);
+    rec.resources.forEach((res, i) => {
+      newPageIfNeeded(12);
+      doc.setFillColor(6, 182, 212, 0.06);
+      const lines = doc.splitTextToSize(res, COL - 14) as string[];
+      const rowH = Math.max(10, lines.length * 4 + 5);
+      doc.roundedRect(MARGIN, y - 2, COL, rowH, 1.5, 1.5, "F");
+      setTxt(CYAN); doc.setFontSize(6); doc.setFont("helvetica", "bold");
+      doc.text(`RESOURCE ${i + 1}`, MARGIN + 3, y + 2);
+      setTxt([148, 163, 184] as const); doc.setFontSize(7.5); doc.setFont("helvetica", "normal");
+      lines.forEach((line, li) => { doc.text(line, MARGIN + 3, y + 6.5 + li * 4.2); });
+      y += rowH + 3;
+    });
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 4-WEEK ACTION PLAN
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  if (rec.action_plan.length > 0) {
+    sectionHeader("4-Week Action Plan", PURPLE);
+    const weekColors2 = [PURPLE, CYAN, GREEN, AMBER] as const;
+    rec.action_plan.forEach((step, i) => {
+      newPageIfNeeded(18);
+      const c2 = weekColors2[i % 4];
+      const lines = doc.splitTextToSize(step, COL - 22) as string[];
+      const rh = Math.max(14, lines.length * 4.5 + 8);
+      doc.setFillColor(c2[0], c2[1], c2[2], 0.08);
+      doc.roundedRect(MARGIN, y, COL, rh, 2, 2, "F");
+      // week badge
+      doc.setFillColor(c2[0], c2[1], c2[2], 0.25);
+      doc.circle(MARGIN + 8, y + rh / 2, 5, "F");
+      setTxt(c2); doc.setFontSize(6.5); doc.setFont("helvetica", "black");
+      doc.text(`W${i + 1}`, MARGIN + 8, y + rh / 2 + 1.2, { align: "center" });
+      // step text
+      setTxt([148, 163, 184] as const); doc.setFontSize(7.5); doc.setFont("helvetica", "normal");
+      lines.forEach((line, li) => { doc.text(line, MARGIN + 17, y + 6 + li * 4.5); });
+      y += rh + 3;
+    });
+    y += 2;
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // MINI PROJECTS
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  if (rec.mini_projects.length > 0) {
+    sectionHeader("Mini Project Suggestions", PINK);
+    const icons2 = ["🚀","🛠","🎯","⚡","🔬","🌐"];
+    rec.mini_projects.forEach((proj, i) => {
+      newPageIfNeeded(16);
+      const lines = doc.splitTextToSize(proj, COL - 14) as string[];
+      const rh = Math.max(12, lines.length * 4.2 + 8);
+      doc.setFillColor(236, 72, 153, 0.05);
+      doc.roundedRect(MARGIN, y, COL, rh, 1.5, 1.5, "F");
+      setTxt(PINK); doc.setFontSize(6); doc.setFont("helvetica", "bold");
+      doc.text(`PROJECT ${i + 1}`, MARGIN + 3, y + 4);
+      setTxt([148, 163, 184] as const); doc.setFontSize(7.5); doc.setFont("helvetica", "normal");
+      lines.forEach((line, li) => { doc.text(line, MARGIN + 3, y + 8.5 + li * 4.2); });
+      y += rh + 3;
+    });
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // FOOTER on every page
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const totalPages = (doc.internal as any).getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    setFill(SURFACE); doc.rect(0, 287, W, 10, "F");
+    setTxt(DARK_MUT); doc.setFontSize(6); doc.setFont("helvetica", "normal");
+    doc.text("AI Career Path Recommender  ·  Generated by AI Resume", MARGIN, 293);
+    doc.text(`Page ${p} of ${totalPages}`, W - MARGIN, 293, { align: "right" });
+  }
+
+  const safeName = rec.role.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase();
+  doc.save(`career-roadmap-${safeName}.pdf`);
+}
+
+/* ─────────────────────────────────────────────────────────────
    Main content
 ───────────────────────────────────────────────────────────── */
 function RoadmapContent() {
@@ -158,6 +455,17 @@ function RoadmapContent() {
 
   /* ── Skill-gap tracker state ──────────────────────────────── */
   const [checkedSkills, setCheckedSkills] = useState<Set<string>>(new Set());
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    if (!rec) return;
+    setExporting(true);
+    try {
+      await exportRoadmapPDF(rec, checkedSkills, readiness, gapProgress);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   /* ── Load recommendation data ─────────────────────────────── */
   useEffect(() => {
@@ -303,13 +611,31 @@ function RoadmapContent() {
 
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
 
-        {/* ── Back navigation ────────────────────────────────── */}
-        <button
-          onClick={() => router.back()}
-          className="btn-ghost-v2 mb-6 text-xs"
-        >
-          <ArrowLeft size={13} /> Back to Results
-        </button>
+        {/* ── Back navigation + Export button ───────────────── */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={() => router.back()}
+            className="btn-ghost-v2 text-xs"
+          >
+            <ArrowLeft size={13} /> Back to Results
+          </button>
+
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{
+              background: "rgba(16,185,129,0.12)",
+              border: "1px solid rgba(16,185,129,0.30)",
+              color: "#6ee7b7",
+            }}
+          >
+            {exporting
+              ? <><Loader2 size={13} className="animate-spin" /> Generating PDF…</>
+              : <><Download size={13} /> Export as PDF</>
+            }
+          </button>
+        </div>
 
         {/* ══════════════════════════════════════════════════════
             SECTION 1 — Role Overview
