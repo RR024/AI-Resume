@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, ArrowRight, RefreshCw, Zap,
-  BrainCircuit, Target, BookOpen, Info
+  BrainCircuit, Target, BookOpen, Info,
+  UploadCloud, CheckCircle2, XCircle, Loader2
 } from "lucide-react";
 import Header from "@/components/Header";
 
@@ -37,27 +38,133 @@ const STATS = [
   { icon: BookOpen,     value: "50+",   label: "Curated resources",color: "text-[#6ee7b7]", glow: "rgba(16,185,129,0.12)" },
 ];
 
+/* ── Known tech / domain skill keywords for smart extraction ── */
+const SKILL_KEYWORDS = new Set([
+  "python","java","javascript","typescript","kotlin","swift","c","c++","c#","go","rust","scala","ruby","php","dart","r","matlab",
+  "react","nextjs","vuejs","angular","svelte","nodejs","express","fastapi","django","flask","spring","springboot","laravel","rails",
+  "html","css","sass","tailwind","bootstrap","graphql","rest","restapi","grpc","websocket",
+  "sql","mysql","postgresql","sqlite","mongodb","redis","elasticsearch","cassandra","dynamodb","firebase","supabase",
+  "docker","kubernetes","terraform","ansible","jenkins","gitlab","github","cicd","linux","bash","nginx",
+  "aws","azure","gcp","cloudflare","heroku","vercel","netlify",
+  "pandas","numpy","sklearn","scikit","tensorflow","pytorch","keras","xgboost","lightgbm","opencv","nltk","spacy",
+  "spark","hadoop","airflow","kafka","dbt","snowflake","bigquery","redshift","tableau","powerbi","looker","metabase",
+  "machine learning","deep learning","nlp","computer vision","llm","mlops","rag","langchain","huggingface","transformers",
+  "figma","sketch","xd","illustrator","photoshop","blender","unity","unreal",
+  "flutter","android","ios","react native","expo",
+  "solidity","ethereum","web3","blockchain","smart contracts",
+  "ros","embedded","arduino","raspberry pi","iot","rtos",
+  "git","jira","agile","scrum","kanban","devops","sre","microservices","system design","architecture",
+  "excel","powerpoint","communication","leadership","management","analytics","statistics","optimization","testing","selenium","pytest",
+]);
+
+function extractSkillsFromText(text: string): string {
+  const lower = text.toLowerCase().replace(/[^a-z0-9+# \n]/g, " ");
+  const found: string[] = [];
+  // Multi-word keywords first
+  SKILL_KEYWORDS.forEach(kw => {
+    if (kw.includes(" ")) {
+      if (lower.includes(kw) && !found.includes(kw)) found.push(kw);
+    }
+  });
+  // Single-word keywords
+  const words = new Set(lower.split(/\s+/).filter(w => w.length > 1));
+  words.forEach(w => {
+    if (SKILL_KEYWORDS.has(w) && !found.includes(w)) found.push(w);
+  });
+  return found.slice(0, 25).join(", ");
+}
+
+async function extractTextFromFile(file: File): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase();
+
+  if (ext === "txt") {
+    return new Promise((res, rej) => {
+      const reader = new FileReader();
+      reader.onload = e => res(e.target?.result as string ?? "");
+      reader.onerror = () => rej(new Error("Could not read file"));
+      reader.readAsText(file);
+    });
+  }
+
+  if (ext === "pdf") {
+    const buf = await file.arrayBuffer();
+    const pdfjsLib = await import("pdfjs-dist");
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+    let text = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map((it: any) => it.str ?? "").join(" ") + "\n";
+    }
+    return text;
+  }
+
+  if (ext === "docx") {
+    const buf = await file.arrayBuffer();
+    const mammoth = await import("mammoth");
+    const result = await mammoth.extractRawText({ arrayBuffer: buf });
+    return result.value;
+  }
+
+  throw new Error("Unsupported file type. Please use PDF, DOCX, or TXT.");
+}
+
 export default function HomePage() {
   const router = useRouter();
-  const [skills, setSkills]         = useState("");
-  const [resumeText, setResumeText] = useState("");
-  const [topN, setTopN]             = useState(3);
-  const [error, setError]           = useState("");
-  const [loading, setLoading]       = useState(false);
-  const [showResume, setShowResume] = useState(false);
+  const [skills, setSkills]   = useState("");
+  const [topN, setTopN]       = useState(3);
+  const [error, setError]     = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Resume file upload state
+  const [resumeFile, setResumeFile]       = useState<File | null>(null);
+  const [resumeStatus, setResumeStatus]   = useState<"idle"|"parsing"|"done"|"error">("idle");
+  const [resumeError, setResumeError]     = useState("");
+  const [isDragging, setIsDragging]       = useState(false);
+
+  async function handleResumeFile(file: File) {
+    setResumeFile(file);
+    setResumeStatus("parsing");
+    setResumeError("");
+    try {
+      const text = await extractTextFromFile(file);
+      const extracted = extractSkillsFromText(text);
+      if (!extracted) throw new Error("No recognisable skills found in the resume. Try typing them manually.");
+      setSkills(extracted);
+      setResumeStatus("done");
+      setError("");
+    } catch (err: any) {
+      setResumeStatus("error");
+      setResumeError(err?.message ?? "Failed to parse resume.");
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleResumeFile(file);
+  }
+
+  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) handleResumeFile(file);
+    e.target.value = "";
+  }
+
+  function clearResume() {
+    setResumeFile(null);
+    setResumeStatus("idle");
+    setResumeError("");
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    let finalSkills = skills.trim();
-
-    if (!finalSkills && resumeText.trim()) {
-      const tokens = resumeText
-        .toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(w => w.length > 2);
-      finalSkills = Array.from(new Set(tokens)).slice(0, 20).join(", ");
-    }
-
+    const finalSkills = skills.trim();
     if (!finalSkills) {
-      setError("Please enter at least one skill or paste your resume.");
+      setError("Please enter at least one skill or upload your resume.");
       return;
     }
     setError("");
@@ -66,7 +173,7 @@ export default function HomePage() {
   }
 
   function handleReset() {
-    setSkills(""); setResumeText(""); setTopN(3); setError("");
+    setSkills(""); setTopN(3); setError(""); clearResume();
   }
 
   return (
@@ -183,38 +290,108 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Resume paste toggle */}
+              {/* ── Resume Upload ─────────────────────────────── */}
               <div>
-                <button
-                  type="button"
-                  onClick={() => setShowResume(v => !v)}
-                  className="text-xs font-semibold transition-colors"
-                  style={{ color: showResume ? "#a78bfa" : "#475569" }}
-                >
-                  {showResume ? "▲ Hide resume paste" : "▼ Paste resume instead"}
-                </button>
-                <AnimatePresence>
-                  {showResume && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25 }}
-                      style={{ overflow: "hidden" }}
+                <p className="text-xs font-semibold text-[#475569] mb-2 flex items-center gap-1.5">
+                  <UploadCloud size={11} />
+                  Or analyse your resume
+                </p>
+
+                {/* Drop zone */}
+                {resumeStatus === "idle" && (
+                  <label
+                    onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleDrop}
+                    className="relative flex flex-col items-center justify-center gap-2 rounded-2xl
+                               px-5 py-6 cursor-pointer transition-all duration-200"
+                    style={{
+                      border: `1.5px dashed ${isDragging ? "rgba(124,58,237,0.55)" : "rgba(255,255,255,0.10)"}`,
+                      background: isDragging ? "rgba(124,58,237,0.07)" : "rgba(255,255,255,0.02)",
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept=".pdf,.docx,.txt"
+                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      onChange={handleFileInput}
+                    />
+                    <UploadCloud
+                      size={26}
+                      className="transition-colors"
+                      style={{ color: isDragging ? "#a78bfa" : "#475569" }}
+                    />
+                    <p className="text-xs font-medium text-center" style={{ color: isDragging ? "#c4b5fd" : "#64748b" }}>
+                      {isDragging
+                        ? "Drop to analyse your resume"
+                        : <><span className="text-[#a78bfa] font-semibold">Click to browse</span> or drag & drop your resume</>}
+                    </p>
+                    <p className="text-[10px] text-[#334155]">PDF · DOCX · TXT</p>
+                  </label>
+                )}
+
+                {/* Parsing state */}
+                {resumeStatus === "parsing" && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center gap-3 rounded-2xl px-4 py-4"
+                    style={{ background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.18)" }}
+                  >
+                    <Loader2 size={15} className="text-[#a78bfa] animate-spin flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-[#a78bfa]">Analysing resume…</p>
+                      <p className="text-[10px] text-[#475569] truncate">{resumeFile?.name}</p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Done state */}
+                {resumeStatus === "done" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-3 rounded-2xl px-4 py-4"
+                    style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.20)" }}
+                  >
+                    <CheckCircle2 size={15} className="text-[#6ee7b7] flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-[#6ee7b7]">Skills extracted & filled ↑</p>
+                      <p className="text-[10px] text-[#475569] truncate">{resumeFile?.name}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearResume}
+                      className="flex-shrink-0 text-[#475569] hover:text-[#94a3b8] transition-colors"
+                      title="Remove"
                     >
-                      <textarea
-                        rows={4}
-                        value={resumeText}
-                        onChange={e => setResumeText(e.target.value)}
-                        placeholder="Paste your resume or LinkedIn About section here…"
-                        className="input-premium mt-3"
-                      />
-                      <p className="text-[10px] text-[#475569] mt-1">
-                        Used only if the skills field above is empty.
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                      <XCircle size={15} />
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Error state */}
+                {resumeStatus === "error" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-start gap-3 rounded-2xl px-4 py-4"
+                    style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.18)" }}
+                  >
+                    <XCircle size={15} className="text-red-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-red-400">Failed to parse resume</p>
+                      <p className="text-[10px] text-[#475569] mt-0.5">{resumeError}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearResume}
+                      className="flex-shrink-0 text-[#475569] hover:text-[#94a3b8] transition-colors"
+                    >
+                      <RefreshCw size={13} />
+                    </button>
+                  </motion.div>
+                )}
               </div>
 
               {/* Top-N slider */}

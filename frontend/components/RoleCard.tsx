@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown, ChevronUp, CheckCircle2, AlertCircle,
-  BookOpen, Target, Code2, Lightbulb, AlertTriangle, Flame
+  BookOpen, Target, Code2, Lightbulb, AlertTriangle, Flame, Map
 } from "lucide-react";
 import type { RoleRecommendation } from "@/lib/types";
 import ScoreRing from "./ScoreRing";
 import clsx from "clsx";
 
-interface Props { rec: RoleRecommendation; rank: number; }
+interface Props { rec: RoleRecommendation; rank: number; inputSkills?: string; }
 
 function rankStyle(rank: number) {
   if (rank === 1) return "rank-1 text-white";
@@ -26,9 +27,18 @@ function cardAccent(score: number) {
   return                  { border: "rgba(124,58,237,0.22)",  glow: "rgba(124,58,237,0.05)",  ring: "#a78bfa" };
 }
 
-export default function RoleCard({ rec, rank }: Props) {
+export default function RoleCard({ rec, rank, inputSkills = "" }: Props) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
   const accent = cardAccent(rec.match_score);
+
+  function handleViewRoadmap() {
+    try {
+      sessionStorage.setItem("roadmap_rec", JSON.stringify(rec));
+      sessionStorage.setItem("roadmap_skills", inputSkills);
+    } catch {}
+    router.push(`/roadmap?role=${encodeURIComponent(rec.role)}&skills=${encodeURIComponent(inputSkills)}`);
+  }
 
   return (
     <motion.div
@@ -104,20 +114,36 @@ export default function RoleCard({ rec, rank }: Props) {
           </div>
         </div>
 
-        {/* Expand toggle */}
-        <button
-          onClick={() => setOpen(v => !v)}
-          className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
-                     text-xs font-semibold transition-all duration-200"
-          style={{
-            background: open ? "rgba(124,58,237,0.12)" : "rgba(255,255,255,0.04)",
-            border: `1px solid ${open ? "rgba(124,58,237,0.30)" : "rgba(255,255,255,0.08)"}`,
-            color: open ? "#a78bfa" : "#64748b",
-          }}
-        >
-          {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-          {open ? "Collapse details" : "View strengths, skill gaps, resources & 4-week plan"}
-        </button>
+        {/* Expand toggle + Roadmap CTA */}
+        <div className="mt-5 flex flex-col sm:flex-row gap-2">
+          <button
+            onClick={() => setOpen(v => !v)}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl
+                       text-xs font-semibold transition-all duration-200"
+            style={{
+              background: open ? "rgba(124,58,237,0.12)" : "rgba(255,255,255,0.04)",
+              border: `1px solid ${open ? "rgba(124,58,237,0.30)" : "rgba(255,255,255,0.08)"}`,
+              color: open ? "#a78bfa" : "#64748b",
+            }}
+          >
+            {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            {open ? "Collapse details" : "View strengths, gaps & plan"}
+          </button>
+
+          <button
+            onClick={handleViewRoadmap}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
+                       text-xs font-semibold transition-all duration-200 whitespace-nowrap"
+            style={{
+              background: "rgba(16,185,129,0.10)",
+              border: "1px solid rgba(16,185,129,0.28)",
+              color: "#6ee7b7",
+            }}
+          >
+            <Map size={13} />
+            View Full Roadmap
+          </button>
+        </div>
       </div>
 
       {/* ── Expanded Section ────────────────────────────────────────── */}

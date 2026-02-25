@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { BrainCircuit, Sparkles } from "lucide-react";
+import { BrainCircuit, Sparkles, Map } from "lucide-react";
 import clsx from "clsx";
 
 const NAV = [
   { href: "/",        label: "Home"    },
   { href: "/results", label: "Results" },
+  { href: "/roadmap", label: "Roadmap", icon: Map },
   { href: "/about",   label: "About"   },
 ];
 
@@ -42,14 +43,14 @@ export default function Header() {
 
           {/* Nav */}
           <nav className="flex items-center gap-1">
-            {NAV.map(({ href, label }) => {
-              const active = path === href;
+            {NAV.map(({ href, label, icon: Icon }) => {
+              const active = path === href || (href === "/roadmap" && path.startsWith("/roadmap"));
               return (
                 <Link
                   key={href}
                   href={href}
                   className={clsx(
-                    "relative px-4 py-2 text-sm font-medium rounded-xl transition-colors duration-200",
+                    "relative px-4 py-2 text-sm font-medium rounded-xl transition-colors duration-200 flex items-center gap-1.5",
                     active ? "text-white" : "text-[#64748b] hover:text-[#94a3b8]"
                   )}
                 >
@@ -60,6 +61,7 @@ export default function Header() {
                       transition={{ type: "spring", stiffness: 380, damping: 30 }}
                     />
                   )}
+                  {Icon && <Icon size={12} className="relative flex-shrink-0" />}
                   <span className="relative">{label}</span>
                 </Link>
               );
